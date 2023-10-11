@@ -1,0 +1,413 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: guifusion
+  Environment:
+    Description: "Server Environment name."
+    ConstraintDescription: "Choose an Environment from the drop down"
+    Type: "String"
+    Default: dev
+
+Resources:
+  MyDatabaseSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Description: "Database credentials for Aurora Serverless v2 cluster"
+      GenerateSecretString:
+        SecretStringTemplate: '{"username":"admin"}'
+        GenerateStringKey: "password"
+        PasswordLength: 16
+        ExcludePunctuation: true
+
+  SecretsManagerVPCEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.secretsmanager"
+      VpcEndpointType: Interface
+      VpcId:
+        Fn::ImportValue: !Sub "${Prefix}-${Environment}-VpcId"
+      SubnetIds:
+        - Fn::ImportValue: !Sub "${Prefix}-${Environment}-PrivateSubnetAId"
+        - Fn::ImportValue: !Sub "${Prefix}-${Environment}-PrivateSubnetBId"
+      SecurityGroupIds:
+        - Fn::ImportValue: !Sub "${Prefix}-${Environment}-VpcSecurityGroupId"
+      PrivateDnsEnabled: true
+
+  DynamoDBEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.dynamodb"
+      VpcEndpointType: Gateway
+      VpcId:
+        Fn::ImportValue: !Sub "${Prefix}-${Environment}-VpcId"
+      RouteTableIds:
+        - Fn::ImportValue: !Sub "${Prefix}-${Environment}-PrivateRouteTable"
+        - Fn::ImportValue: !Sub "${Prefix}-${Environment}-PublicRouteTable"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: "*"
+            Action: "*"
+            Resource: "*"
+
+  STSEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.sts"
+      VpcEndpointType: Interface
+      VpcId:
+        Fn::ImportValue: !Sub "${Prefix}-${Environment}-VpcId"
+      SubnetIds:
+        - Fn::ImportValue: !Sub "${Prefix}-${Environment}-PrivateSubnetAId"
+        - Fn::ImportValue: !Sub "${Prefix}-${Environment}-PrivateSubnetBId"
+      SecurityGroupIds:
+        - Fn::ImportValue: !Sub "${Prefix}-${Environment}-VpcSecurityGroupId"
+      PrivateDnsEnabled: true
+
+  AuroraSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Allow traffic to Aurora Serverless v2"
+      VpcId:
+        Fn::ImportValue: !Sub "${Prefix}-${Environment}-VpcId"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 0
+          ToPort: 65535
+          SourceSecurityGroupId:
+            Fn::ImportValue: !Sub "${Prefix}-${Environment}-VpcSecurityGroupId"
+      Tags:
+        - Key: Name
+          Value: !Sub ${Prefix}-${Environment}-AuroraSecurityGroup
+
+  AuroraDBCluster:
+    Type: AWS::RDS::DBCluster
+    DeletionPolicy: Snapshot
+    UpdateReplacePolicy: Snapshot
+    Properties:
+      DeletionProtection: true
+      Engine: aurora-mysql
+      EngineVersion: 8.0.mysql_aurora.3.02.0
+      DatabaseName: mydatabase
+      DBClusterIdentifier: !Sub ${Prefix}-${Environment}-AuroraDBCluster
+      MasterUsername: admin
+      MasterUserPassword:
+        !Join [
+          "",
+          [
+            "{{resolve:secretsmanager:",
+            !Ref MyDatabaseSecret,
+            ":SecretString:password}}",
+          ],
+        ]
+      BackupRetentionPeriod: 7
+      ServerlessV2ScalingConfiguration:
+        MinCapacity: .5
+        MaxCapacity: 16
+      VpcSecurityGroupIds:
+        - Fn::ImportValue: !Sub "${Prefix}-${Environment}-VpcSecurityGroupId"
+      DBSubnetGroupName:
+        Ref: AuroraDBSubnetGroup
+      Tags:
+        - Key: Name
+          Value: !Sub ${Prefix}-${Environment}-AuroraDBCluster
+
+  AuroraDBInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      AllowMajorVersionUpgrade: false
+      AutoMinorVersionUpgrade: false
+      CopyTagsToSnapshot: true
+      Engine: aurora-mysql
+      DBInstanceClass: db.serverless
+      DBClusterIdentifier: !Ref AuroraDBCluster
+      EnablePerformanceInsights: true
+
+  AuroraDBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupName: !Sub ${Prefix}-${Environment}-aurora-db-subnet-group
+      DBSubnetGroupDescription: !Sub "${Prefix}-${Environment} Group For aurora"
+      SubnetIds:
+        - Fn::ImportValue: !Sub "${Prefix}-${Environment}-PrivateSubnetAId"
+        - Fn::ImportValue: !Sub "${Prefix}-${Environment}-PrivateSubnetBId"
+      Tags:
+        - Key: Name
+          Value: !Sub ${Prefix}-${Environment}-AuroraDBSubnetGroup
+
+  RDSProxy:
+    Type: AWS::RDS::DBProxy
+    Properties:
+      DBProxyName: !Sub ${Prefix}-${Environment}-AuroraDBProxy
+      Auth:
+        - AuthScheme: SECRETS
+          SecretArn: !Ref MyDatabaseSecret
+          IAMAuth: DISABLED
+      EngineFamily: MYSQL
+      RequireTLS: false
+      RoleArn: !GetAtt RDSProxyRole.Arn
+      VpcSubnetIds:
+        - Fn::ImportValue: !Sub "${Prefix}-${Environment}-PrivateSubnetAId"
+        - Fn::ImportValue: !Sub "${Prefix}-${Environment}-PrivateSubnetBId"
+      VpcSecurityGroupIds:
+        - Fn::ImportValue: !Sub "${Prefix}-${Environment}-VpcSecurityGroupId"
+      DebugLogging: true
+
+  ProxyTargetGroup:
+    Type: AWS::RDS::DBProxyTargetGroup
+    Properties:
+      DBProxyName: !Ref RDSProxy
+      DBClusterIdentifiers: [!Ref AuroraDBCluster]
+      TargetGroupName: default
+      ConnectionPoolConfigurationInfo:
+        MaxConnectionsPercent: 100
+        MaxIdleConnectionsPercent: 50
+        ConnectionBorrowTimeout: 120
+
+  RDSProxyRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: !Sub "${Prefix}-${Environment}-my-rdsproxy-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: rds.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: rdsproxy-policy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "rds-db:connect"
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - "secretsmanager:GetSecretValue"
+                Resource: !Ref MyDatabaseSecret
+
+  # Cognito User Pools for public and backoffice
+  PublicCognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub ${Prefix}-public-${Environment}
+      UsernameAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+  PublicCognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub ${Prefix}-PublicWebApp-${Environment}
+      UserPoolId:
+        Ref: PublicCognitoUserPool
+      AllowedOAuthFlows:
+        - implicit
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthScopes:
+        - aws.cognito.signin.user.admin
+      CallbackURLs:
+        - https://localhost:3000
+      ExplicitAuthFlows:
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      GenerateSecret: false
+      SupportedIdentityProviders:
+        - COGNITO
+  PublicUserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      UserPoolId:
+        Ref: PublicCognitoUserPool
+      Domain: !Sub ${Prefix}-public-${Environment}
+  ManagementCognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub ${Prefix}-management-${Environment}
+      UsernameAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+  ManagementCognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub ${Prefix}-ManagementWebApp-${Environment}
+      UserPoolId:
+        Ref: ManagementCognitoUserPool
+      AllowedOAuthFlows:
+        - implicit
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthScopes:
+        - aws.cognito.signin.user.admin
+      CallbackURLs:
+        - https://localhost:3000
+      ExplicitAuthFlows:
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      GenerateSecret: false
+      SupportedIdentityProviders:
+        - COGNITO
+  ManagementUserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      UserPoolId:
+        Ref: ManagementCognitoUserPool
+      Domain: !Sub ${Prefix}-management-${Environment}
+
+  # Media Bucket for public and backoffice
+  MediaBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${Prefix}-${Environment}-media-bucket"
+      AccessControl: Private
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ["*"]
+            AllowedMethods: ["PUT"]
+            AllowedOrigins: ["*"]
+  CloudFrontOriginAccessIdentity:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Sub "Identity for accessing CloudFront from S3 within stack ${AWS::StackName}"
+  MediaBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket:
+        Ref: MediaBucket
+      PolicyDocument:
+        Statement:
+          # Read permission for CloudFront
+          - Action: s3:GetObject
+            Effect: "Allow"
+            Resource: !Sub "arn:aws:s3:::${MediaBucket}/*"
+            Principal:
+              CanonicalUser: !GetAtt CloudFrontOriginAccessIdentity.S3CanonicalUserId
+
+  MediaCdnDistributionResponseHeadersPolicy:
+    Type: AWS::CloudFront::ResponseHeadersPolicy
+    Properties: 
+      ResponseHeadersPolicyConfig: 
+        Name: !Sub "${Prefix}-${Environment}-MediaCdnDistributionResponseHeadersPolicy"
+        # Comment: Example response headers policy for the documentation
+        CorsConfig: 
+          AccessControlAllowCredentials: false
+          AccessControlAllowHeaders: 
+            Items: 
+              - '*'
+          AccessControlAllowMethods: 
+            Items: 
+              - GET
+              - PUT
+              - POST
+              - PATCH
+              - OPTIONS
+          AccessControlAllowOrigins: 
+            Items: 
+              - "*"
+          AccessControlExposeHeaders: 
+            Items: 
+              - '*'
+          AccessControlMaxAgeSec: 600
+          OriginOverride: false
+
+  MediaCdnDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+          # S3 origin for static content
+          - DomainName: !Sub "${Prefix}-${Environment}-media-bucket.s3.amazonaws.com"
+            Id: MediaBucketS3Origin
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}"
+        Enabled: true
+        Comment: CDN for Media.
+        HttpVersion: http3
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - DELETE
+            - GET
+            - HEAD
+            - OPTIONS
+            - PATCH
+            - POST
+            - PUT
+          Compress: true
+          TargetOriginId: MediaBucketS3Origin
+          ResponseHeadersPolicyId: !Ref MediaCdnDistributionResponseHeadersPolicy
+          ForwardedValues:
+            QueryString: true
+            Cookies:
+              Forward: none
+          ViewerProtocolPolicy: redirect-to-https
+        PriceClass: PriceClass_200
+
+Outputs:
+  DatabaseSecret:
+    Description: The secret string for the Aurora database
+    Value: !Ref MyDatabaseSecret
+    Export:
+      Name: !Sub "${Prefix}-${Environment}-DatabaseSecret"
+
+  AuroraSecurityGroupId:
+    Description: The ID of the Aurora security group
+    Value: !GetAtt AuroraSecurityGroup.GroupId
+    Export:
+      Name: !Sub "${Prefix}-${Environment}-AuroraSecurityGroupId"
+
+  RdsProxy:
+    Description: The RDS Proxy ARN
+    Value: !GetAtt RDSProxy.DBProxyArn
+    Export:
+      Name: !Sub "${Prefix}-${Environment}-RdsProxy"
+
+  RdsProxyEndpointUrl:
+    Description: The RDS Proxy endpoint URL
+    Value: !GetAtt RDSProxy.Endpoint
+    Export:
+      Name: !Sub "${Prefix}-${Environment}-RdsProxyEndpointUrl"
+
+  # Cognito User Pools for public and backoffice
+  PublicCognitoUserPool:
+    Value:
+      Ref: PublicCognitoUserPool
+    Export:
+      Name: !Sub "${Prefix}-${Environment}-PublicCognitoUserPool"
+  PublicCognitoUserPoolClient:
+    Value:
+      Ref: PublicCognitoUserPoolClient
+    Export:
+      Name: !Sub "${Prefix}-${Environment}-PublicCognitoUserPoolClient"
+  ManagementCognitoUserPool:
+    Value:
+      Ref: ManagementCognitoUserPool
+    Export:
+      Name: !Sub "${Prefix}-${Environment}-ManagementCognitoUserPool"
+  ManagementCognitoUserPoolClient:
+    Value:
+      Ref: ManagementCognitoUserPoolClient
+    Export:
+      Name: !Sub "${Prefix}-${Environment}-ManagementCognitoUserPoolClient"
+
+  # Media Bucket for public and backoffice
+  MediaBucket:
+    Value:
+      Ref: MediaBucket
+    Export:
+      Name: !Sub "${Prefix}-${Environment}-MediaBucket"
+  MediaCdnDistributionId:
+    Value: !Ref MediaCdnDistribution
+    Export:
+      Name: !Sub "${Prefix}-${Environment}-MediaCdnDistributionId"
+  MediaCdnDistributionDomainName:
+    Value: !GetAtt MediaCdnDistribution.DomainName
+    Export:
+      Name: !Sub "${Prefix}-${Environment}-MediaCdnDistributionDomainName"

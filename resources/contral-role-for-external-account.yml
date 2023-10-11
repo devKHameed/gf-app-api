@@ -1,0 +1,60 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  ExternalAccountIds:
+    Type: CommaDelimitedList
+    Default: ""
+    Description: A list of external AWS Account IDs that can assume the role.
+  Prefix:
+    Type: String
+    Default: guifusion
+  Environment:
+    Description: "Server Environment name."
+    ConstraintDescription: "Choose an Environment from the drop down"
+    Type: "String"
+    Default: dev
+
+Resources:
+  IAMRoleARN:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: !Sub "${Prefix}-${Environment}-role-for-external-accounts"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Join
+                - ","
+                - !Ref ExternalAccountIds
+            Action: "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        - PolicyName: "MyPolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: "Statement1"
+                Effect: "Allow"
+                Action:
+                  - "dynamodb:*"
+                  - "ec2:*"
+                  - "rds:*"
+                  - "s3:*"
+                  - "transcribe:*"
+                  - "secretsmanager:*"
+                  - "events:*"
+                  - "schemas:*"
+                  - "scheduler:*"
+                  - "pipes:*"
+                  - "networkmanager:*"
+                  - "cloudfront:*"
+                  - "apigateway:*"
+                  - "execute-api:*"
+                  - "rds-data:*"
+                Resource: "*"
+Outputs:
+  IAMRoleARN:
+    Description: "ARN of the IAM role"
+    Value: !GetAtt IAMRoleARN.Arn
+    Export:
+      Name: !Sub "${Prefix}-${Environment}-IAMRoleARN"

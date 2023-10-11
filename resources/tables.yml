@@ -1,0 +1,1586 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  This template deploys dynamo tables.
+
+Parameters:
+  Environment:
+    Description: "Server Environment name."
+    ConstraintDescription: "Choose an Environment from the drop down"
+    Type: "String"
+    Default: dev
+  Prefix:
+    Description: "Prefix Environment name."
+    ConstraintDescription: "Prefix"
+    Type: "String"
+    Default: guifusion
+    
+Resources:
+  SysUsersDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+        - AttributeName: email
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      LocalSecondaryIndexes:
+        - IndexName: email_lsi_index
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: email
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "sys_user-${Prefix}-${Environment}"
+  GlobalAccountSettingsDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+        - AttributeName: is_deleted
+          AttributeType: N
+        - AttributeName: is_active
+          AttributeType: N
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      LocalSecondaryIndexes:
+        - IndexName: is_active_lsi_index
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_active
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: is_deleted_lsi_index
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_deleted
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TableName: !Sub "global_account_settings-${Prefix}-${Environment}"
+  AccountUserSubscriptionsDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: user_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: user_id
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: user_id_gsi_index
+          KeySchema:
+            - AttributeName: user_id
+              KeyType: HASH
+            - AttributeName: id
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "account_user_subscriptions-${Prefix}-${Environment}"
+  AcctUserTypesDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+        - AttributeName: is_deleted
+          AttributeType: N
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      LocalSecondaryIndexes:
+        - IndexName: is_deleted_lsi_index
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_deleted
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TableName: !Sub "acct_user_types-${Prefix}-${Environment}"
+  AccountGlobalGFMLFunctionDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "acct_global_gfml_functions-${Prefix}-${Environment}"
+  Account3PAppGFMLFunctionDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "acct_3p_app_gfml_functions-${Prefix}-${Environment}"
+  Account3PAppsDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "acct_3p_apps-${Prefix}-${Environment}"
+  Account3PAppActionsDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "acct_3p_app_actions-${Prefix}-${Environment}"
+  Account3PAppConnectionsDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "acct_3p_app_connections-${Prefix}-${Environment}"
+  Account3PAppRPDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "acct_3p_app_rp-${Prefix}-${Environment}"
+  Account3PAppWebhookDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "acct_3p_app_webhook-${Prefix}-${Environment}"
+  AccountFusionHistoriesDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "acct_fusion_histories-${Prefix}-${Environment}"
+  AccountFusionFlowsHistoriesDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+        - AttributeName: is_deleted
+          AttributeType: N
+        - AttributeName: is_active
+          AttributeType: N
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      LocalSecondaryIndexes:
+        - IndexName: is_active_lsi_index
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_active
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: is_deleted_lsi_index
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_deleted
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TableName: !Sub "acct_fusion_flows_histories-${Prefix}-${Environment}"
+  AccountFusionsDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+        - AttributeName: fusion_type
+          AttributeType: S
+        - AttributeName: folder_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      GlobalSecondaryIndexes:
+        - IndexName: fusion_type_gsi
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: fusion_type
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: folder_id_gsi
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: folder_id
+              KeyType: RANGE
+          Projection:
+            ProjectionType: INCLUDE
+            NonKeyAttributes:
+              - slug
+              - fusion_title
+              - fusion_slug
+              - fusion_type
+              - fusion_description
+              - fusion_tags
+              - fusion_icon
+              - is_active
+              - is_deleted
+              - created_at
+              - updated_at    
+      TableName: !Sub "acct_fusions-${Prefix}-${Environment}"
+  AccountFusionFlowsDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+        - AttributeName: is_deleted
+          AttributeType: N
+        - AttributeName: is_active
+          AttributeType: N
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      LocalSecondaryIndexes:
+        - IndexName: is_active_lsi_index
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_active
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: is_deleted_lsi_index
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_deleted
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TableName: !Sub "acct_fusion_flows-${Prefix}-${Environment}"
+  AccountFusionSessionsDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "acct_fusion_sessions-${Prefix}-${Environment}"
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
+  AccountFusionSessionsV2DynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "acct_fusion_sessions_v2-${Prefix}-${Environment}"
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
+  AccountFusionWebhooksDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "acct_fusion_webhooks-${Prefix}-${Environment}"
+  AccountFusionConnectionsDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "acct_fusion_connections-${Prefix}-${Environment}"
+  Account3PAppConfigsDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "acct_3p_app_configs-${Prefix}-${Environment}"
+  SocketConnectionsDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+        - AttributeName: user_id
+          AttributeType: S
+        - AttributeName: last_ping
+          AttributeType: N
+      LocalSecondaryIndexes:
+        - IndexName: user_id_lsi_index
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: user_id
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: last_ping_lsi_index
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: last_ping
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "socket_connections-${Prefix}-${Environment}"
+  FusionSchedulesDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+        - AttributeName: fusion_slug
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      GlobalSecondaryIndexes:
+        - IndexName: fusion_slug_status_gsi
+          KeySchema:
+            - AttributeName: fusion_slug
+              KeyType: HASH
+            - AttributeName: status
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TableName: !Sub "scheduled_fusions-${Prefix}-${Environment}"
+  FusionSchedulesV2DynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+        - AttributeName: fusion_slug
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      GlobalSecondaryIndexes:
+        - IndexName: fusion_slug_status_gsi
+          KeySchema:
+            - AttributeName: fusion_slug
+              KeyType: HASH
+            - AttributeName: status
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TableName: !Sub "scheduled_fusions_v2-${Prefix}-${Environment}"
+  AccountCsvImportsDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "acct_csv_imports-${Prefix}-${Environment}"
+  AccountFusionsQueueDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+        - AttributeName: chunk_status
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      GlobalSecondaryIndexes:
+        - IndexName: chunk_status_gsi
+          KeySchema:
+            - AttributeName: chunk_status
+              KeyType: HASH
+            - AttributeName: slug
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TableName: !Sub "acct_fusion_queue-${Prefix}-${Environment}"
+  AccountSOCTasksDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+        - AttributeName: event_status_schedule
+          AttributeType: S
+        - AttributeName: is_deleted
+          AttributeType: N
+        - AttributeName: is_active
+          AttributeType: N
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      LocalSecondaryIndexes:
+        - IndexName: is_active_lsi_index
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_active
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: is_deleted_lsi_index
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_deleted
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      GlobalSecondaryIndexes:
+        - IndexName: event_status_schedule_gsi_index
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: event_status_schedule
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TableName: !Sub "acct_soc_tasks-${Prefix}-${Environment}"
+  AcctUniversalEventsDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+        - AttributeName: event_slug_record_type_idx
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: event_slug_record_type_gsi
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: event_slug_record_type_idx
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "acct_universal_events-${Prefix}-${Environment}"
+  AcctUniversalTagsDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+        - AttributeName: tag_user_id_idx
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: tag_user_id_gsi
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: tag_user_id_idx
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "acct_universal_tags-${Prefix}-${Environment}"
+  AcctUserNotesDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+        - AttributeName: is_deleted
+          AttributeType: N
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      LocalSecondaryIndexes:
+        - IndexName: is_deleted_lsi
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_deleted
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "acct_universal_notes-${Prefix}-${Environment}"
+  AcctGFGuiDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "acct_gf_guis-${Prefix}-${Environment}"
+  AcctFusionSetsDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "acct_fusion_sets-${Prefix}-${Environment}"
+  AccountDatasetDesignDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+        - AttributeName: is_deleted
+          AttributeType: N
+        - AttributeName: is_active
+          AttributeType: N
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      LocalSecondaryIndexes:
+        - IndexName: is_active_lsi_index
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_active
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: is_deleted_lsi_index
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_deleted
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TableName: !Sub "acct_dataset_designs-${Prefix}-${Environment}"
+  AccountUserActivityDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+        - AttributeName: event_type_datetime
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      GlobalSecondaryIndexes:
+        - IndexName: event_type_datetime_gsi
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: event_type_datetime
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TableName: !Sub "acct_user_activity-${Prefix}-${Environment}"
+  SysIconsDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+        - AttributeName: is_deleted
+          AttributeType: N
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      GlobalSecondaryIndexes:
+        - IndexName: is_deleted_lsi
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_deleted
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TableName: !Sub "sys_icons-${Prefix}-${Environment}"
+  AccountFoldersDbDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "acct_folders-${Prefix}-${Environment}"
+  BillingDataDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+        - AttributeName: is_deleted
+          AttributeType: N
+        - AttributeName: is_active
+          AttributeType: N
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      LocalSecondaryIndexes:
+        - IndexName: is_active_lsi_index
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_active
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: is_deleted_lsi_index
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_deleted
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TableName: !Sub "billing_data-${Prefix}-${Environment}"
+  AccountGFDashboardWidgetsDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+        - AttributeName: is_deleted
+          AttributeType: N
+        - AttributeName: is_active
+          AttributeType: N
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      LocalSecondaryIndexes:
+        - IndexName: is_active_lsi
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_active
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: is_deleted_lsi
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_deleted
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TableName: !Sub "acct_gf_dashboard_widgets-${Prefix}-${Environment}"
+  AccountPresentationsDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+        - AttributeName: title
+          AttributeType: S
+        - AttributeName: is_deleted
+          AttributeType: N
+        - AttributeName: is_active
+          AttributeType: N
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      LocalSecondaryIndexes:
+        - IndexName: is_active_lsi
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_active
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: is_deleted_lsi
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_deleted
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      GlobalSecondaryIndexes:
+        - IndexName: title_gsi_index
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: title
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TableName: !Sub "acct_presentations-${Prefix}-${Environment}"
+  AccountVectorKnowledgebaseDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+        - AttributeName: pinecone_index
+          AttributeType: S
+        - AttributeName: is_deleted
+          AttributeType: N
+        - AttributeName: is_active
+          AttributeType: N
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      LocalSecondaryIndexes:
+        - IndexName: is_active_lsi
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_active
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: is_deleted_lsi
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_deleted
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      GlobalSecondaryIndexes:
+        - IndexName: status_lsi
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: pinecone_index
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TableName: !Sub "acct_vector_knowledgebase-${Prefix}-${Environment}"
+  AccountVectorKnowledgebaseTopicsDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+        - AttributeName: is_deleted
+          AttributeType: N
+        - AttributeName: is_active
+          AttributeType: N
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      LocalSecondaryIndexes:
+        - IndexName: is_active_lsi
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_active
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: is_deleted_lsi
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_deleted
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TableName: !Sub "acct_vector_knowledgebase_topics-${Prefix}-${Environment}"
+  AccountVectorKnowledgebaseMessagesDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+        - AttributeName: is_deleted
+          AttributeType: N
+        - AttributeName: is_active
+          AttributeType: N
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      LocalSecondaryIndexes:
+        - IndexName: is_active_lsi
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_active
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: is_deleted_lsi
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_deleted
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TableName: !Sub "acct_vector_knowledgebase_messages-${Prefix}-${Environment}"
+  AccountUploadDesignDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+        - AttributeName: is_deleted
+          AttributeType: N
+        - AttributeName: is_active
+          AttributeType: N
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      LocalSecondaryIndexes:
+        - IndexName: is_active_lsi
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_active
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: is_deleted_lsi
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_deleted
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TableName: !Sub "acct_upload_designs-${Prefix}-${Environment}"
+  AccountImporterUploadsDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      GlobalSecondaryIndexes:
+        - IndexName: status_lsi
+          KeySchema:
+            - AttributeName: status
+              KeyType: HASH
+            - AttributeName: slug
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TableName: !Sub "acct_importer_uploads-${Prefix}-${Environment}"
+  SylarChatSessionDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "sylar_chat_session-${Prefix}-${Environment}"
+  SylarChatMessagesDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "sylar_chat_messages-${Prefix}-${Environment}"      
+  SylarChatLogDynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+        - AttributeName: event_type
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: event_type_gsi
+          KeySchema:
+            - AttributeName: event_type
+              KeyType: HASH
+            - AttributeName: slug
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+          Projection:
+            ProjectionType: ALL          
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "sylar_chat_log-${Prefix}-${Environment}"  
+  AccountFineTuneKnowledgebaseDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+        - AttributeName: pinecone_index
+          AttributeType: S
+        - AttributeName: is_deleted
+          AttributeType: N
+        - AttributeName: is_active
+          AttributeType: N
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      LocalSecondaryIndexes:
+        - IndexName: is_active_lsi
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_active
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: is_deleted_lsi
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_deleted
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      GlobalSecondaryIndexes:
+        - IndexName: status_lsi
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: pinecone_index
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TableName: !Sub "acct_fine_tune_knowledgebase-${Prefix}-${Environment}"
+  AccountFineTuneKnowledgebaseTopicsDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+        - AttributeName: is_deleted
+          AttributeType: N
+        - AttributeName: is_active
+          AttributeType: N
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      LocalSecondaryIndexes:
+        - IndexName: is_active_lsi
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_active
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: is_deleted_lsi
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_deleted
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TableName: !Sub "acct_fine_tune_knowledgebase_topics-${Prefix}-${Environment}"
+  AccountFineTuneKnowledgebaseMessagesDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+        - AttributeName: is_deleted
+          AttributeType: N
+        - AttributeName: is_active
+          AttributeType: N
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      LocalSecondaryIndexes:
+        - IndexName: is_active_lsi
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_active
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: is_deleted_lsi
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_deleted
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TableName: !Sub "acct_fine_tune_knowledgebase_messages-${Prefix}-${Environment}"
+  AccountSkillsIntentsDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "skill_intents-${Prefix}-${Environment}"
+  AccountSkillSessionDataDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "skill_session_data-${Prefix}-${Environment}"
+  AccountJobSessionDataDbTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "job_session_data-${Prefix}-${Environment}"
+  CreditTypesTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+        - AttributeName: is_deleted
+          AttributeType: N          
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      LocalSecondaryIndexes:
+        - IndexName: is_deleted_lsi
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_deleted
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL    
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "credit_types-${Prefix}-${Environment}"
+  SeatTypesTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+        - AttributeName: is_deleted
+          AttributeType: N          
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      LocalSecondaryIndexes:
+        - IndexName: is_deleted_lsi
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_deleted
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL    
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "seat_types-${Prefix}-${Environment}" 
+  PackagesTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+        - AttributeName: is_deleted
+          AttributeType: N          
+        - AttributeName: is_active
+          AttributeType: N 
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      LocalSecondaryIndexes:
+        - IndexName: is_active_lsi
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_active
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL          
+        - IndexName: is_deleted_lsi
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_deleted
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL    
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "packages-${Prefix}-${Environment}"
+  PackageSeatSettingTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+        - AttributeName: is_deleted
+          AttributeType: N          
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      LocalSecondaryIndexes:
+        - IndexName: is_deleted_lsi
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_deleted
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL    
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "package_seat_settings-${Prefix}-${Environment}" 
+  PackageCreditSettingTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: slug
+          AttributeType: S
+        - AttributeName: is_deleted
+          AttributeType: N          
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      LocalSecondaryIndexes:
+        - IndexName: is_deleted_lsi
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_deleted
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL    
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "package_credit_settings-${Prefix}-${Environment}"
+  AppConfigurationDynamoTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S 
+        - AttributeName: slug
+          AttributeType: S
+        - AttributeName: is_deleted
+          AttributeType: N            
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: slug
+          KeyType: RANGE
+      LocalSecondaryIndexes:
+        - IndexName: is_deleted_lsi
+          KeySchema:
+            - AttributeName: id
+              KeyType: HASH
+            - AttributeName: is_deleted
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL    
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "app-configuration-${Prefix}-${Environment}"

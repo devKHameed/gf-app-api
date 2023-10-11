@@ -1,0 +1,12 @@
+.github
+.build
+node_modules
+.husky
+.serverless
+.eslintrc.js
+docs
+webpack.*
+tsconfig.json
+serverless.ts
+resources
+plugins

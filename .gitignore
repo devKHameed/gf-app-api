@@ -1,0 +1,7 @@
+node_modules
+.serverless
+.build
+swagger
+.webpack
+.env
+.env.*

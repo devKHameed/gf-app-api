@@ -1,0 +1,7 @@
+export const DUBLICATE_EMAIL = "DUBLICATE_EMAIL";
+export const INVALID_INPUT = "INVALID_INPUT";
+
+export default {
+  DUBLICATE_EMAIL,
+  INVALID_INPUT,
+};

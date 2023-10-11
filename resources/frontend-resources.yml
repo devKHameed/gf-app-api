@@ -1,0 +1,169 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  This template deploys dynamo tables.
+
+Parameters:
+  Environment:
+    Description: "Server Environment name."
+    ConstraintDescription: "Choose an Environment from the drop down"
+    Type: "String"
+    Default: dev
+  Prefix:
+    Type: "String"
+    Default: guifusion
+
+Resources:
+  #  PUBLIC Bucket And Cloudfront
+  PublicBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${Prefix}-${Environment}-public-frontend"
+      AccessControl: Private
+  PublicCloudFrontOriginAccessIdentity:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Sub "Identity for accessing CloudFront from S3 within stack ${AWS::StackName}"
+  PublicFrontendBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket:
+        Ref: PublicBucket
+      PolicyDocument:
+        Statement:
+          # Read permission for CloudFront
+          - Action: s3:GetObject
+            Effect: "Allow"
+            Resource: !Sub "arn:aws:s3:::${PublicBucket}/*"
+            Principal:
+              CanonicalUser: !GetAtt PublicCloudFrontOriginAccessIdentity.S3CanonicalUserId
+  # Cloudfront distro backed by Bucket
+  PublicFrontendCdnDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+          # S3 origin for static content
+          - DomainName: !Sub "${Prefix}-${Environment}-public-frontend.s3.amazonaws.com"
+            Id: PublicFrontendBucketS3Origin
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${PublicCloudFrontOriginAccessIdentity}"
+        Enabled: true
+        Comment: CDN for Media.
+        DefaultRootObject: index.html
+        HttpVersion: http2
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - DELETE
+            - GET
+            - HEAD
+            - OPTIONS
+            - PATCH
+            - POST
+            - PUT
+          Compress: true
+          TargetOriginId: PublicFrontendBucketS3Origin
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+          ViewerProtocolPolicy: redirect-to-https
+        PriceClass: PriceClass_200
+        CustomErrorResponses:
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+
+  #  ManagementBucket Bucket And Cloudfront
+  ManagementBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${Prefix}-${Environment}-management-frontend"
+      AccessControl: Private
+  ManagementCloudFrontOriginAccessIdentity:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Sub "Identity for accessing CloudFront from S3 within stack ${AWS::StackName}"
+  ManagementFrontendBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket:
+        Ref: ManagementBucket
+      PolicyDocument:
+        Statement:
+          # Read permission for CloudFront
+          - Action: s3:GetObject
+            Effect: "Allow"
+            Resource: !Sub "arn:aws:s3:::${ManagementBucket}/*"
+            Principal:
+              CanonicalUser: !GetAtt ManagementCloudFrontOriginAccessIdentity.S3CanonicalUserId
+  # Cloudfront distro backed by Bucket
+  ManagementFrontendCdnDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+          # S3 origin for static content
+          - DomainName: !Sub "${Prefix}-${Environment}-management-frontend.s3.amazonaws.com"
+            Id: ManagementFrontendBucketS3Origin
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${ManagementCloudFrontOriginAccessIdentity}"
+        Enabled: true
+        Comment: CDN for Media.
+        DefaultRootObject: index.html
+        HttpVersion: http2
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - DELETE
+            - GET
+            - HEAD
+            - OPTIONS
+            - PATCH
+            - POST
+            - PUT
+          Compress: true
+          TargetOriginId: ManagementFrontendBucketS3Origin
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+          ViewerProtocolPolicy: redirect-to-https
+        PriceClass: PriceClass_200
+        CustomErrorResponses:
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+
+Outputs:
+  PublicBucket:
+    Value: !Ref PublicBucket
+    Export:
+      Name: !Sub "${Prefix}-${Environment}-PublicBucket"
+  PublicFrontendCdnDistribution:
+    Value: !Ref PublicFrontendCdnDistribution
+    Export:
+      Name: !Sub "${Prefix}-${Environment}-PublicFrontendCdnDistribution"
+  PublicFrontendCdnDistributionDomainName:
+    Value: !GetAtt PublicFrontendCdnDistribution.DomainName
+    Export:
+      Name: !Sub "${Prefix}-${Environment}-PublicFrontendCdnDistributionDomainName"
+  ManagementBucket:
+    Value: !Ref ManagementBucket
+    Export:
+      Name: !Sub "${Prefix}-${Environment}-ManagementBucket"
+  ManagementBucketFrontendCdnDistribution:
+    Value: !Ref ManagementFrontendCdnDistribution
+    Export:
+      Name: !Sub "${Prefix}-${Environment}-ManagementBucketFrontendCdnDistribution"
+  ManagementFrontendCdnDistributionDomainName:
+    Value: !GetAtt ManagementFrontendCdnDistribution.DomainName
+    Export:
+      Name: !Sub "${Prefix}-${Environment}-ManagementFrontendCdnDistributionDomainName"

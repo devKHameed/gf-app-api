@@ -1,0 +1,40 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch Serverless Offline",
+      "program": "${workspaceRoot}/node_modules/serverless/bin/serverless",
+      "args": [
+        "offline",
+        "start",
+        "--noTimeout"
+        // "--port",
+        // "4000"
+        // "--aws-profile=#PROFILENAME#"
+      ],
+      "sourceMaps": true,
+      "autoAttachChildProcesses": true,
+      "runtimeArgs": [
+        "--lazy"
+      ],
+      "outFiles": [
+        "${workspaceRoot}/.webpack/**/*.js"
+      ],
+      "protocol": "inspector",
+      "runtimeExecutable": "node",
+      "env": {
+        "SLS_DEBUG": "*",
+        "AWS_PROFILE": "newgf",
+        "NODE_ENV": "development"
+      },
+      "windows": {
+        "program": "${workspaceRoot}\\node_modules\\serverless\\bin\\serverless"
+      }
+    }
+  ]
+}

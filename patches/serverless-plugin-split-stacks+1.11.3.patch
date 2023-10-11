@@ -1,0 +1,67 @@
+diff --git a/node_modules/serverless-plugin-split-stacks/lib/migrate-new-resources.js b/node_modules/serverless-plugin-split-stacks/lib/migrate-new-resources.js
+index 0354afa..ad2e224 100644
+--- a/node_modules/serverless-plugin-split-stacks/lib/migrate-new-resources.js
++++ b/node_modules/serverless-plugin-split-stacks/lib/migrate-new-resources.js
+@@ -30,7 +30,7 @@ module.exports = function migrateResources() {
+         return;
+       }
+ 
+-      const stackName = this.getStackName(migration.destination, migration.allowSuffix);
++      const stackName = this.getStackName(migration.destination, migration.allowSuffix, migration.resourcesLimit);
+       this.migrate(logicalId, stackName, migration.force);
+     }
+   });
+diff --git a/node_modules/serverless-plugin-split-stacks/lib/utils.js b/node_modules/serverless-plugin-split-stacks/lib/utils.js
+index 2a14ceb..2b21410 100644
+--- a/node_modules/serverless-plugin-split-stacks/lib/utils.js
++++ b/node_modules/serverless-plugin-split-stacks/lib/utils.js
+@@ -161,7 +161,7 @@ module.exports = {
+     return `${destination}NestedStack`;
+   },
+ 
+-  getStackName(destination, allowSuffix) {
++  getStackName(destination, allowSuffix, resourcesLimit) {
+     let stackNameBase = this.getStackNameBase(destination);
+     let stackName;
+     let suffix = '';
+@@ -170,7 +170,7 @@ module.exports = {
+       const potentialStackName = `${stackNameBase}${suffix}`;
+       const stack = this.nestedStack(potentialStackName);
+ 
+-      if (this.stackHasRoom(stack)) {
++      if (this.stackHasRoom(stack,resourcesLimit)) {
+         stackName = potentialStackName;
+       } else {
+         if (allowSuffix) {
+@@ -188,10 +188,17 @@ module.exports = {
+     return stackName;
+   },
+ 
+-  stackHasRoom(stack) {
++  stackHasRoom(stack,resourcesLimit) {
+     const resources = stack.Resources || {};
+     const outputs = stack.Outputs || {};
+-
++    if (
++      resourcesLimit
++      && typeof resourcesLimit === 'number'
++      && Number.isInteger(resourcesLimit)
++    ) {
++      return Object.keys(resources).length < resourcesLimit
++        && Object.keys(outputs).length < 200;
++    }
+     return Object.keys(resources).length < 500
+       && Object.keys(outputs).length < 200;
+   },
+diff --git a/node_modules/serverless-plugin-split-stacks/split-stacks.js b/node_modules/serverless-plugin-split-stacks/split-stacks.js
+index 9cd19b6..74b488a 100644
+--- a/node_modules/serverless-plugin-split-stacks/split-stacks.js
++++ b/node_modules/serverless-plugin-split-stacks/split-stacks.js
+@@ -22,6 +22,7 @@ class ServerlessPluginSplitStacks {
+     if (!semver.satisfies(serverless.version, '>= 1.13')) {
+       throw new Error('serverless-plugin-split-stacks requires serverless 1.13 or higher!');
+     }
++    if (serverless.service.custom.splitStacks === false) return;
+ 
+     this.serverless = serverless;
+     this.options = options;

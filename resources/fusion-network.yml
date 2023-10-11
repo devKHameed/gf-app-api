@@ -1,0 +1,41 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  Prefix:
+    Type: String
+    Default: guifusion
+  Environment:
+    Description: "Server Environment name."
+    ConstraintDescription: "Choose an Environment from the drop down"
+    Type: "String"
+    Default: dev
+  VpcId:
+    Description: "Please enter the IP range (CIDR notation) for this VPC"
+    Type: "String"
+
+Resources:
+  VPCSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub "${Prefix}-${Environment}-Vpc SecurityGroup"
+      VpcId:
+        Ref: VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0 # Allow incoming traffic on port 80 from any IP
+      SecurityGroupEgress:
+        - IpProtocol: "-1"
+          CidrIp: 0.0.0.0/0 # Allow outgoing traffic to any IP
+      Tags:
+        - Key: Name
+          Value: !Sub ${Prefix}-${Environment}-VPCSecurityGroup
+
+Outputs:
+  VpcSecurityGroupId:
+    Description: The ID of the VPC security group
+    Value: !GetAtt VPCSecurityGroup.GroupId
+    Export:
+      Name: !Sub "${Prefix}-${Environment}-VpcSecurityGroupId"
